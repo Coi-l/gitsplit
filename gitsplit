@@ -1,0 +1,82 @@
+#!/usr/bin/python
+
+import sys
+
+class PatchedFile():
+    def __init__(self, lines):
+        self.chuncks = []
+        self.lines = lines
+        self.file_name = self.lines[0].split()[2].split('/')[-1]
+
+class PatchFile():
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.lines = []
+        self.files = []
+        self.header = []
+        self.file_summary = []
+        self.suffix = []
+        f = open(file_name, 'r')
+        self.lines = f.readlines()
+
+        self.get_header()
+        self.lines = self.lines[len(self.header):]
+
+        self.get_file_summary()
+        self.lines = self.lines[len(self.file_summary):]
+
+        self.get_suffix()
+        self.lines = self.lines[:-len(self.suffix)]
+
+        self.get_file_diffs()
+
+        self.write_new_files()
+
+    def write_new_files(self):
+        for pf in self.files:
+            f = open(pf.file_name + ".patch", "w")
+            for l in self.header:
+                f.write(l)
+            for l in pf.lines:
+                f.write(l)
+            for l in self.suffix:
+                f.write(l)
+            f.close()
+
+    def get_header(self):
+        for l in self.lines:
+            self.header.append(l)
+            if l[:3] == '---':
+                break
+        return self.header
+
+    def get_file_summary(self):
+        for l in self.lines:
+            if l[:10] != 'diff --git':
+                self.file_summary.append(l)
+            else:
+                break
+
+    def get_suffix(self):
+        self.suffix = self.lines[-3:]
+
+    def get_file_diffs(self):
+        file_starts = []
+        i = 0
+        for l in self.lines:
+            if l[:10] == 'diff --git':
+                file_starts.append(i)
+            i += 1
+
+        file_starts.reverse()
+        for f in file_starts:
+            pf = PatchedFile(self.lines[f:])
+            self.lines = self.lines[:f]
+            self.files.append(pf)
+
+def main():
+    patch_file = sys.argv[1]
+    pf = PatchFile(patch_file)
+
+if __name__ == '__main__':
+    main()
