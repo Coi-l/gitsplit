@@ -4,7 +4,6 @@ import sys
 
 class PatchedFile():
     def __init__(self, lines):
-        self.chuncks = []
         self.lines = lines
         self.file_name = self.lines[0].split()[2].split('/')[-1]
 
@@ -18,6 +17,7 @@ class PatchFile():
         self.suffix = []
         f = open(file_name, 'r')
         self.lines = f.readlines()
+        f.close()
 
         self.get_header()
         self.lines = self.lines[len(self.header):]
